@@ -170,3 +170,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 *.env
+kafka_data/
+zk_data/
+zk_log/

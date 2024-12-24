@@ -40,6 +40,48 @@ services:
     networks:
       - app_network
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"      
+    volumes:
+      - ./zk_data:/var/lib/zookeeper/data
+      - ./zk_log:/var/lib/zookeeper/log
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "echo ruok | nc -w 5 localhost 2181 | grep imok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - app_network
+    restart: unless-stopped
+
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./kafka_data:/var/lib/kafka/data
+    networks:
+      - app_network
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server=kafka:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
 volumes:
   postgres_data: # Named volume for PostgreSQL
   redis_data:    # Named volume for Redis

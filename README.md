@@ -24,3 +24,16 @@ check if tables are created
 docker exec -it postgres_db psql -U postgres_user -d postgres_db -c "\dt"
 docker exec -it postgres_db psql -U postgres_user -d postgres_db -c "\dt *"
 ```
+Kafka commands to check the services
+```bash
+# get into the kafka container
+docker exec -it kafka /bin/bash
+# create a topic
+kafka-topics --create --topic test.events --bootstrap-server kafka:29092 --partitions 4 --replication-factor 1
+# check the topic
+kafka-topics --describe --topic test.events --bootstrap-server kafka:29092
+# produce and consume messages
+kafka-console-producer --bootstrap-server kafka:29092 --topic test.events # enter some messages and exit
+kafka-console-consumer --bootstrap-server kafka:29092 --topic test.events --from-beginning # check the messages
+``` 
+
