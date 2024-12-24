@@ -1,17 +1,32 @@
-from db import db
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from config import config
 import uvicorn
 from loguru import logger
-from views import api as user_api, post_api
+from config import config
+from db import db
+from views import user_api, post_api
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        logger.info("Starting application...")
+        db.connect(config.DB_CONFIG)
+        logger.info("Database connection established.")
+        yield
+    except Exception as e:
+        logger.error(f"Failed during startup: {e}")
+        raise
+    finally:
+        try:
+            await db.disconnect()
+            logger.info("Database connection closed.")
+        except Exception as e:
+            logger.error(f"Failed during shutdown: {e}")
 
 
 def init_app() -> FastAPI:
-    """
-    Initialize the FastAPI application with routes, database connections,
-    and event handlers.
-    """
     app = FastAPI(
         title="Users and Posts App",
         description="API for managing users and posts.",
@@ -19,38 +34,11 @@ def init_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        lifespan=lifespan,
     )
-
-    @app.on_event("startup")
-    async def startup():
-        """
-        Startup event to initialize database connection and log startup.
-        """
-        try:
-            logger.info("Starting application...")
-            db.connect(config.DB_CONFIG)
-            logger.info("Database connection established.")
-        except Exception as e:
-            logger.error(f"Failed to connect to the database: {e}")
-            raise
-
-    @app.on_event("shutdown")
-    async def shutdown():
-        """
-        Shutdown event to clean up resources like the database connection.
-        """
-        try:
-            logger.info("Shutting down application...")
-            await db.disconnect()
-            logger.info("Database connection closed.")
-        except Exception as e:
-            logger.error(f"Failed to disconnect from the database: {e}")
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        """
-        Global exception handler to capture and log unexpected errors.
-        """
         logger.error(f"Unhandled exception: {exc}")
         return JSONResponse(
             status_code=500,
@@ -76,6 +64,5 @@ def init_app() -> FastAPI:
 
 app = init_app()
 
-# Run the server
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, log_level="info", reload=True)
