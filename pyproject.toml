@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "fastapi-kafka"
+version = "0.1.0"
+description = ""
+authors = ["Soutrik <soutrik.chowdhury@ab-inbev.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.6"
+sqlalchemy = "^2.0.36"
+alembic = "^1.14.0"
+uvicorn = "^0.34.0"
+asyncpg = "^0.30.0"
+black = "^24.10.0"
+pydantic = "^2.10.4"
+python-dotenv = "^1.0.1"
+loguru = "^0.7.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
