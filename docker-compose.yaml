@@ -1,91 +1,123 @@
 version: "3.9"
 services:
-  postgres:
-    image: postgres:15-alpine # Use a specific and lightweight version
-    container_name: postgres_db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      PGDATA: /var/lib/postgresql/data
+  control_service:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    hostname: control_service
+    container_name: control_service
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
-      - "5432:5432" # Host:Container port mapping
+      - "8000:8000"
+    environment:
+      - MY_NAME="Spiderweb Control"
+    env_file:
+      - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Use named volume for portability
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: unless-stopped # Ensure it restarts on failures
+      - ./:/home/app
     networks:
-      - app_network
+      - my-net
 
-  redis-stack:
-    image: redis/redis-stack:latest
-    container_name: redis_stack
+  spidey_1:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    hostname: spidey_1
+    container_name: spidey_1
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
-      - "6379:6379" # Redis service
-      - "8001:8001" # Redis Stack UI
+      - "8001:8000"
     environment:
-      REDIS_ARGS: "--save 60 1 --loglevel warning"
+      - MY_NAME=Tobey Maguire
+    env_file:
+      - .env
     volumes:
-      - redis_data:/data # Named volume for Redis persistence
+      - ./:/home/app
+    networks:
+      - my-net
+
+  spidey_2:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    hostname: spidey_2
+    container_name: spidey_2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8002:8000"
+    environment:
+      - MY_NAME=Andrew Garfield
+    env_file:
+      - .env
+    volumes:
+      - ./:/home/app
+    networks:
+      - my-net
+
+  spidey_3:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    hostname: spidey_3
+    container_name: spidey_3
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8003:8000"
+    environment:
+      - MY_NAME=Tom Holland
+    env_file:
+      - .env
+    volumes:
+      - ./:/home/app
+    networks:
+      - my-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - my-net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: nc -z localhost 8080 || exit
       interval: 10s
       timeout: 5s
-      retries: 5
-    restart: unless-stopped # Ensure it restarts on failures
-    networks:
-      - app_network
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
-    hostname: zookeeper
-    container_name: zookeeper
-    ports:
-      - "2181:2181"      
-    volumes:
-      - ./zk_data:/var/lib/zookeeper/data
-      - ./zk_log:/var/lib/zookeeper/log
-    env_file:
-      - .env
-    healthcheck:
-      test: ["CMD", "echo ruok | nc -w 5 localhost 2181 | grep imok"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - app_network
-    restart: unless-stopped
-
+      retries: 15
 
   kafka:
-    image: confluentinc/cp-kafka:7.0.1
-    hostname: kafka
+    image: obsidiandynamics/kafka
     container_name: kafka
-    depends_on:
-      - zookeeper
+    restart: "no"
     ports:
-      - "9092:9092"
-    volumes:
-      - ./kafka_data:/var/lib/kafka/data
-    networks:
-      - app_network
+      - "2181:2181"
+      - "9093:9093"
+      - "29092:29092"
+
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server=kafka:9092"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-
-volumes:
-  postgres_data: # Named volume for PostgreSQL
-  redis_data:    # Named volume for Redis
+      test: nc -z kafka 29092 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - my-net
+    depends_on:
+      kafka-ui:
+        condition: service_healthy
 
 networks:
-  app_network: # Shared network for inter-service communication
+  my-net:
     driver: bridge

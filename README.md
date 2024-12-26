@@ -37,3 +37,21 @@ kafka-console-producer --bootstrap-server kafka:29092 --topic test.events # ente
 kafka-console-consumer --bootstrap-server kafka:29092 --topic test.events --from-beginning # check the messages
 ``` 
 
+#### SPIDEY API Project
+<url> https://medium.com/@arturocuicas/fastapi-and-apache-kafka-4c9e90aab27f
+```bash
+docker exec -it kafka bash
+# create a new topic in the kafka container
+./opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --create --topic spiderweb --partitions 1 --replication-factor 1
+# check the topic
+./opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list
+# describe the topic
+./opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --describe spiderweb
+```
+
+#### Steps to test the entire service
+```bash
+# first up the kafka container and create a topic
+# then up the fastapi containers and test from the controller service
+```
+
