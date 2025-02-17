@@ -40,6 +40,7 @@ kafka-console-consumer --bootstrap-server kafka:29092 --topic test.events --from
 #### SPIDEY API Project
 <url> https://medium.com/@arturocuicas/fastapi-and-apache-kafka-4c9e90aab27f
 ```bash
+# Exec into the container
 docker exec -it kafka bash
 # create a new topic in the kafka container
 ./opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --create --topic spiderweb --partitions 1 --replication-factor 1
@@ -54,4 +55,12 @@ docker exec -it kafka bash
 # first up the kafka container and create a topic
 # then up the fastapi containers and test from the controller service
 ```
+
+#### Multiple services Kafka Communication
+    Architecture Overview
+    - Service A: Receives payload from the UI via an endpoint and publishes it to Kafka.
+    - Service B: Consumes the message from Kafka, processes it (e.g., performs addition), and produces the result back to Kafka.
+    - Service C: Consumes the message from Service B, processes it further, and sends the output to Kafka.
+    - Service D: Consumes the final message from Kafka and sends the result back to the UI.
+
 

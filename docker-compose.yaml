@@ -1,85 +1,5 @@
 version: "3.9"
 services:
-  control_service:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    hostname: control_service
-    container_name: control_service
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8000:8000"
-    environment:
-      - MY_NAME="Spiderweb Control"
-    env_file:
-      - .env
-    volumes:
-      - ./:/home/app
-    networks:
-      - my-net
-
-  spidey_1:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    hostname: spidey_1
-    container_name: spidey_1
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8001:8000"
-    environment:
-      - MY_NAME=Tobey Maguire
-    env_file:
-      - .env
-    volumes:
-      - ./:/home/app
-    networks:
-      - my-net
-
-  spidey_2:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    hostname: spidey_2
-    container_name: spidey_2
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8002:8000"
-    environment:
-      - MY_NAME=Andrew Garfield
-    env_file:
-      - .env
-    volumes:
-      - ./:/home/app
-    networks:
-      - my-net
-
-  spidey_3:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    hostname: spidey_3
-    container_name: spidey_3
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8003:8000"
-    environment:
-      - MY_NAME=Tom Holland
-    env_file:
-      - .env
-    volumes:
-      - ./:/home/app
-    networks:
-      - my-net
-
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
@@ -99,16 +19,15 @@ services:
   kafka:
     image: obsidiandynamics/kafka
     container_name: kafka
-    restart: "no"
+    restart: "always"
     ports:
       - "2181:2181"
       - "9093:9093"
       - "29092:29092"
-
     env_file:
       - .env
     healthcheck:
-      test: nc -z kafka 29092 || exit 1
+      test: nc -z localhost 29092 || exit 1
       interval: 10s
       timeout: 5s
       retries: 15
@@ -117,6 +36,9 @@ services:
     depends_on:
       kafka-ui:
         condition: service_healthy
+    volumes:
+      - ./create-topics.sh:/create-topics.sh
+    command: ["sh", "-c", "kafka-server-start.sh /etc/kafka/server.properties & sleep 5 && sh /create-topics.sh && tail -f /dev/null"]
 
 networks:
   my-net:
